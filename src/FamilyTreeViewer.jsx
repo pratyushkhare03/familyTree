@@ -312,7 +312,19 @@ export default function FamilyTreeViewer() {
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300">
           <Menu className="w-6 h-6 text-gray-800" />
         </button>
-        <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-800">👨‍👩‍👧‍👦 Family Hierarchy</h1>
+        <h1
+  className="
+    inline-block
+    font-bubble font-extrabold tracking-tight
+    text-transparent bg-clip-text
+    bg-gradient-to-tr from-emerald-400 via-teal-400 to-cyan-400
+    drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]
+    text-2xl sm:text-3xl md:text-4xl
+  "
+>
+  Family Tree
+</h1>
+
       </header>
 
       <div className="flex flex-1 min-h-0">

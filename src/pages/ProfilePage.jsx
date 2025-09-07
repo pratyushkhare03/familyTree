@@ -246,13 +246,18 @@ export default function ProfilePage({
               </div>
               <label className="text-sm text-blue-600 cursor-pointer">
                 Change photo
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                  const file = e.target.files?.;
-                  if (!file) return;
-                  const url = URL.createObjectURL(file);
-                  setProfile((p) => ({ ...p, avatarUrl: url }));
-                  // TODO: upload to server then set final URL
-                }} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]; // fixed: proper optional chaining with index [web:505][web:511]
+                    if (!file) return;
+                    const url = URL.createObjectURL(file);
+                    setProfile((p) => ({ ...p, avatarUrl: url }));
+                    // TODO: upload to storage and set final URL
+                  }}
+                />
               </label>
             </div>
             <div className="space-y-2">

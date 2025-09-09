@@ -18,7 +18,7 @@ export default function ProfilePanel({ sidebarOpen, profile, setProfile }) {
         value={profile.email}
         onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
       />
-      <button className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm">Save</button>
+      <button className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-sm">Save</button>
     </div>
   );
 }

@@ -11,6 +11,7 @@ export default function MembersPanel({
   activeBoardId,
   setActiveBoardId,
   resetBoardView,
+  onOpenProfileDetail
 }) {
   return (
     <div className="max-w-4xl mx-auto">
@@ -31,18 +32,10 @@ export default function MembersPanel({
                 <div className="text-xs text-gray-500">{m.dob || '—'}</div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded" onClick={() => focusMember(m.id)}>
+                <button className="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 rounded" onClick={() => {onOpenProfileDetail(m.id);}}>
                   Go to
                 </button>
-                <button
-                  className="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 rounded"
-                  onClick={() => {
-                    const newId = 'p' + Date.now();
-                    addChild(m.id, { id: newId, name: 'New Member', dob: '', spouse: '', notes: '', children: [] });
-                  }}
-                >
-                  + Child
-                </button>
+
               </div>
             </div>
           ))}

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Pencil, Plus, Trash2, Menu, LogOut, X } from 'lucide-react';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { TransformWrapper, TransformComponent, useTransformContext } from 'react-zoom-pan-pinch';
 
 // New imports for separated files
 import SidebarMenu from './components/sidebar/SidebarMenu';
@@ -9,23 +9,31 @@ import DashboardPanel from './components/panels/DashboardPanel';
 import MembersPanel from './components/panels/MembersPanel';
 import AddBoardModal from './components/modals/AddBoardModal';
 
+import ProfileDetail from './components/panels/ProfileDetail';
+import EditProfileModal from './components/modals/EditProfileModal';
+
 export default function FamilyTreeViewer() {
   // Multi-board support
   const defaultBoard = {
     id: 'b1',
-    name: 'Ravi Kumar',
+    name: 'Daya Sagar Khare',
     tree: {
       id: 'p1',
-      name: 'Ravi Kumar',
+      name: 'Daya Sagar Khare',
       dob: '1965-02-10',
-      spouse: 'Sita Devi',
-      notes: 'Founder of the family',
+      spouse: 'Rameshwari Khare',
+      notes: 'Head of the Family',
       children: [
-        { id: 'p2', name: 'Amit Kumar', dob: '1988-07-05', spouse: 'Neha', notes: 'Elder son', children: [] },
-        { id: 'p3', name: 'Sunita Sharma', dob: '1990-09-22', spouse: 'Rohit Sharma', notes: 'Daughter', children: [] }
+        { id: 'p2', name: 'Avinash Khare', dob: '1988-07-05', spouse: 'Kiran Khare', notes: 'Elder son', children: [] },
+        { id: 'p3', name: 'Vishwas Khare', dob: '1990-09-22', spouse: 'Beena Khare', notes: 'Younger Son', children: [] },
+        { id: 'p4', name: 'Vibha Khare', dob: '1990-09-22', spouse: 'Mukul Khare', notes: 'Elder Daughter', children: [] },
+        { id: 'p5', name: 'Shikha Khare', dob: '1990-09-22', spouse: 'Rakesh Khare', notes: 'Middle Daughter', children: [] },
+        { id: 'p6', name: 'Nisha Khare', dob: '1990-09-22', spouse: 'Manoj Khare', notes: 'Younger Daughter', children: [] }
       ]
     }
   };
+
+
 
   const [boards, setBoards] = useState([defaultBoard]);
   const [activeBoardId, setActiveBoardId] = useState(defaultBoard.id);
@@ -37,6 +45,20 @@ export default function FamilyTreeViewer() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ name: '', dob: '', spouse: '', notes: '' });
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedMemberId, setSelectedMemberId] = useState(null);
+const [showEditProfile, setShowEditProfile] = useState(false);
+
+// Derived members flat list (declare before using it anywhere)
+const flatMembers = useMemo(() => {
+  const arr = [];
+  function dfs(node, depth = 0) {
+    arr.push({ id: node.id, name: node.name, dob: node.dob, depth, notes: node.notes });
+    (node.children || []).forEach((c) => dfs(c, depth + 1));
+  }
+  if (root) dfs(root, 0);
+  return arr;
+}, [root]);
+
 
   // Connectors and zoom
   const svgRef = useRef(null);
@@ -54,15 +76,25 @@ export default function FamilyTreeViewer() {
   const [newBoardForm, setNewBoardForm] = useState({ rootName: '', dob: '', spouse: '', notes: '' });
 
   // Derived for current board
-  const flatMembers = useMemo(() => {
-    const arr = [];
-    function dfs(node, depth = 0) {
-      arr.push({ id: node.id, name: node.name, dob: node.dob, depth });
-      node.children?.forEach((c) => dfs(c, depth + 1));
-    }
-    if (root) dfs(root, 0);
-    return arr;
-  }, [root]);
+  const getMemberById = useCallback((id) => {
+  if (!root || !id) return null;
+  let found = null;
+  (function dfs(node){
+    if (node.id === id) { found = node; return; }
+    node.children?.forEach(dfs);
+  })(root);
+  return found;
+}, [root]);
+
+// helpers & data
+// const selectedMember = getMemberById(selectedMemberId);
+// const selectedMember = useMemo(() => getMemberById(selectedMemberId), [getMemberById, selectedMemberId]);
+
+// Derived AFTER helper
+const selectedMember = useMemo(
+  () => getMemberById(selectedMemberId),
+  [getMemberById, selectedMemberId]
+);
 
   const stats = useMemo(() => {
     const count = flatMembers.length;
@@ -305,11 +337,34 @@ export default function FamilyTreeViewer() {
     setSelected(null);
   };
 
+
+const [zoomPct, setZoomPct] = useState(100);
+const handleTransformed = useCallback((refOrObj, maybeScale, posX, posY) => {
+  // Support both signatures:
+  // 1) (ref, scale, posX, posY)
+  // 2) ({ state: { scale } })
+  let scale;
+  if (typeof refOrObj === 'object' && refOrObj?.state?.scale) {
+    scale = refOrObj.state.scale;
+  } else {
+    scale = maybeScale;
+  }
+  if (!Number.isFinite(scale)) return;
+  setZoomPct(Math.round(scale * 100));
+}, []);
+
+// Initialize once from ref after mount
+useEffect(() => {
+  const s = zoomRef.current?.instance?.transformState?.scale;
+  if (Number.isFinite(s)) setZoomPct(Math.round(s * 100));
+}, []);
+
+
   return (
     <div className="h-dvh w-dvw bg-slate-100 flex flex-col relative overflow-hidden">
       {/* Header */}
-      <header className="bg-white shadow-md px-3 sm:px-4 py-3 flex items-center justify-between z-30 relative">
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+      <header className="bg-emerald-100 shadow-md px-3 sm:px-4 py-3 flex items-center justify-between z-30 relative">
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 bg-emerald-200 rounded-lg hover:bg-emerald-300">
           <Menu className="w-6 h-6 text-gray-800" />
         </button>
         <h1
@@ -329,7 +384,12 @@ export default function FamilyTreeViewer() {
 
       <div className="flex flex-1 min-h-0">
         {/* Sidebar: only menu + small panels (no Members) */}
-        <aside className={`${sidebarOpen ? 'w-56 sm:w-64' : 'w-12 sm:w-16'} bg-white shadow-md transition-all duration-300 flex flex-col shrink-0 z-30`}>
+        <aside
+          className={`${sidebarOpen ? 'w-56 sm:w-64' : 'w-12 sm:w-16'} 
+          bg-emerald-100 dark:bg-slate-900 
+          shadow-md transition-all duration-300 flex flex-col shrink-0 z-30 
+          border-r border-slate-200 dark:border-slate-800`}
+        >
           <SidebarMenu
             sidebarOpen={sidebarOpen}
             onOpenProfile={() => setActiveView('profile')}
@@ -337,6 +397,9 @@ export default function FamilyTreeViewer() {
             onOpenAddBoard={() => { setActiveView('add'); setShowAddFamilyModal(true); }}
             onOpenMembers={() => setActiveView('members')}
           />
+
+
+
 
           <div className="flex-1 overflow-auto p-3 sm:p-4">
             {activeView === 'profile' && (
@@ -352,10 +415,10 @@ export default function FamilyTreeViewer() {
             )}
           </div>
 
-          <div className="p-3 sm:p-4 border-t flex items-center gap-2 cursor-pointer hover:text-red-600 relative z-30">
-            <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span className="text-sm sm:text-base">Logout</span>}
-          </div>
+            <div className="p-3 sm:p-4 border-t flex items-center gap-2 cursor-pointer hover:text-red-600 relative z-30">
+              <LogOut className="w-5 h-5" />
+              {sidebarOpen && <span className="text-sm sm:text-base">Logout</span>}
+            </div>
         </aside>
 
         {/* Main: shows Members panel when active, else the whiteboard */}
@@ -363,52 +426,88 @@ export default function FamilyTreeViewer() {
           ref={mainRef}
           className={`flex-1 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 overflow-y-auto overflow-x-hidden relative ${sidebarOpen ? 'w-[calc(100dvw-14rem)] sm:w-[calc(100dvw-16rem)]' : 'w-[calc(100dvw-3rem)] sm:w-[calc(100dvw-4rem)]'}`}
         >
-          {activeView === 'members' ? (
-            <MembersPanel
-              flatMembers={flatMembers}
-              memberQuery={memberQuery}
-              setMemberQuery={setMemberQuery}
-              addChild={addChild}
-              focusMember={focusMember}
-              boardsList={boardsList}
-              activeBoardId={activeBoardId}
-              setActiveBoardId={(id) => {
-                setActiveBoardId(id);
-                nodeRefs.current = {};
-                setTimeout(() => handleReset(), 0);
-              }}
-              resetBoardView={() => {
-                nodeRefs.current = {};
-                setTimeout(() => handleReset(), 0);
-              }}
-            />
-          ) : (
+          {activeView === 'profileDetail' ? (
+  <>
+    <ProfileDetail
+      member={selectedMember}
+      onEdit={() => setShowEditProfile(true)}
+    />
+    <EditProfileModal
+      show={showEditProfile}
+      member={selectedMember}
+      onClose={() => setShowEditProfile(false)}
+      onSave={(form) => {
+        if (!selectedMember) return;
+        const updated = {
+          ...selectedMember,
+          ...form,
+          children: selectedMember.children || []
+        };
+        updateMember(updated);
+        setShowEditProfile(false);
+      }}
+    />
+  </>
+) : activeView === 'members' ? (
+  <MembersPanel
+    /* existing props you already pass to MembersPanel */
+    flatMembers={flatMembers}
+    memberQuery={memberQuery}
+    setMemberQuery={setMemberQuery}
+    addChild={addChild}
+    focusMember={focusMember}
+    boardsList={boardsList}
+    activeBoardId={activeBoardId}
+    setActiveBoardId={(id) => {
+      setActiveBoardId(id);
+      nodeRefs.current = {};
+      setTimeout(() => handleReset(), 0);
+    }}
+    resetBoardView={() => {
+      nodeRefs.current = {};
+      setTimeout(() => handleReset(), 0);
+    }}
+
+    /* NEW: open profile detail when clicking Go To */
+    onOpenProfileDetail={(id) => {
+      setSelectedMemberId(id);
+      setActiveView('profileDetail');
+    }}
+  />
+) : (
             <>
-              {/* Zoom toolbar */}
-              <div className="absolute right-2 sm:right-3 top-2 sm:top-3 z-50 bg-white/90 backdrop-blur px-1.5 sm:px-2 py-1 rounded shadow flex items-center gap-1.5 sm:gap-2">
-                <button className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm" onClick={handleZoomOut}>-</button>
-                <button className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm" onClick={handleZoomIn}>+</button>
-                <button className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm" onClick={handleReset}>Reset</button>
-              </div>
+             
+{/* Zoom toolbar */}
+<div className="absolute right-2 sm:right-3 top-2 sm:top-3 z-50 bg-emerald-100/90 backdrop-blur px-1.5 sm:px-2 py-1 rounded shadow flex items-center gap-1.5 sm:gap-2">
+  <button className="px-2 py-1 bg-emerald-300 rounded hover:bg-emerald-400 text-sm" onClick={handleZoomOut}>-</button>
+  <button className="px-2 py-1 bg-emerald-300 rounded hover:bg-emerald-400 text-sm" onClick={handleZoomIn}>+</button>
+  <button className="px-2 py-1 bg-emerald-300 rounded hover:bg-emerald-400 text-sm" onClick={handleReset}>Reset</button>
+  <span className="...">{zoomPct}%</span>
+</div>
 
-              {/* Whiteboard */}
-              <TransformWrapper {...zoomOptions} ref={zoomRef}>
-                <TransformComponent wrapperClass="absolute inset-0 z-0" contentClass="relative z-0">
-                  <div className="relative" style={{ width: 2400, height: 1600 }}>
-                    <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none z-0">
-                      {lines.map((d, i) => (
-                        <path key={i} d={d} stroke="#374151" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                      ))}
-                    </svg>
+{/* Whiteboard */}
+<TransformWrapper
+  {...zoomOptions}
+  ref={zoomRef}
+  onTransformed={handleTransformed}  // NEW: updates zoomScale on any transform
+>
+  <TransformComponent wrapperClass="absolute inset-0 z-0" contentClass="relative z-0">
+    <div className="relative" style={{ width: "100000px", height: "100000px" }}>
+      <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none z-0">
+        {lines.map((d, i) => (
+          <path key={i} d={d} stroke="#374151" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        ))}
+      </svg>
 
-                    <div className="relative w-full h-full flex items-start justify-center pt-20">
-                      <div className="flex flex-col items-center gap-20 relative">
-                        {root && <PersonCard person={root} />}
-                      </div>
-                    </div>
-                  </div>
-                </TransformComponent>
-              </TransformWrapper>
+      <div className="relative w-full h-full flex items-start justify-center pt-20">
+        <div className="flex flex-col items-center gap-20 relative">
+          {root && <PersonCard person={root} />}
+        </div>
+      </div>
+    </div>
+  </TransformComponent>
+</TransformWrapper>
+
             </>
           )}
 
@@ -477,8 +576,8 @@ export default function FamilyTreeViewer() {
         </main>
       </div>
 
-      <footer className="bg-white shadow-inner px-3 sm:px-4 py-3 text-center text-gray-500 text-xs sm:text-sm z-30 relative">
-        © {new Date().getFullYear()} Family Tree Project. All rights reserved.
+      <footer className="bg-emerald-100 shadow-inner px-3 sm:px-4 py-3 text-center text-gray-500 text-xs sm:text-sm z-30 relative">
+        © {new Date().getFullYear()} Family Tree. All rights reserved.
       </footer>
     </div>
   );

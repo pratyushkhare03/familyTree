@@ -83,7 +83,7 @@ export default function ProfilePage({
   };
 
   return (
-    <div className="min-h-dvh bg-slate-50">
+    <div className="min-h-dvh bg-slate-50 flex flex-col">
       <header className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-gray-800">Account Settings</h1>
@@ -147,45 +147,6 @@ export default function ProfilePage({
         {/* Right column */}
         <section className="lg:col-span-2 space-y-4">
           <div className="bg-white rounded-xl shadow p-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><KeyRound className="w-4 h-4" /> Two‑Factor Authentication (2FA)</h2>
-            {!twoFAEnabled ? (
-              <div className="space-y-3">
-                <p className="text-sm text-gray-600">Add a second step to sign in using an authenticator app. Scan the QR and verify a code to enable 2FA. You can also download backup codes for recovery.</p>
-                <div className="flex items-start gap-4">
-                  <div className="w-40 h-40 border rounded flex items-center justify-center">
-                    {twoFASetup.qrSvg ? (
-                      <div dangerouslySetInnerHTML={{ __html: twoFASetup.qrSvg }} />
-                    ) : (<QrCode className="w-10 h-10 text-gray-400" />)}
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="flex gap-2">
-                      <button disabled={saving2FA} onClick={handleEnable2FA} className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60">
-                        {saving2FA ? 'Preparing…' : 'Start setup'}
-                      </button>
-                      <button onClick={handleDownloadBackupCodes} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-2">
-                        <Download className="w-4 h-4" /> Backup codes
-                      </button>
-                    </div>
-                    <div className="flex gap-2 items-center">
-                      <input className="p-2 border rounded text-sm" placeholder="6‑digit code" value={twoFACode} onChange={(e) => setTwoFACode(e.target.value)} />
-                      <button disabled={saving2FA || !twoFACode} onClick={handleVerify2FA} className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60">
-                        Verify & enable
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-green-700">2FA is enabled on this account.</p>
-                <button disabled={saving2FA} onClick={handleDisable2FA} className="px-3 py-2 bg-red-50 text-red-700 rounded hover:bg-red-100 disabled:opacity-60">
-                  Disable 2FA
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl shadow p-4">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><Smartphone className="w-4 h-4" /> Sessions & Devices</h2>
             <p className="text-sm text-gray-600 mb-2">Sign out from other browsers and devices if you’ve lost a device or notice suspicious activity.</p>
             <button disabled={revoking} onClick={handleRevokeSessions} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-2 disabled:opacity-60">
@@ -196,7 +157,7 @@ export default function ProfilePage({
           <div className="bg-white rounded-xl shadow p-4">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><Link2 className="w-4 h-4" /> Connected Accounts</h2>
             <div className="grid sm:grid-cols-3 gap-3">
-              {['google', 'github', 'microsoft'].map((p) => (
+              {['google', 'microsoft'].map((p) => (
                 <label key={p} className="flex items-center justify-between p-3 border rounded">
                   <span className="text-sm capitalize">{p}</span>
                   <input type="checkbox" checked={providers[p]} onChange={(e) => handleToggleProvider(p, e.target.checked)} />
